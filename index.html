@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CATALYST - Crop Disease Detection</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-green: #2D5016;
+            --light-green: #7CB342;
+            --earth-brown: #8D6E63;
+            --bg-light: #F1F8E9;
+            --text-dark: #2C3E50;
+            --accent: #558B2F;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+
+        /* Navigation */
+        nav {
+            background-color: var(--primary-green);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-brand {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .nav-links button {
+            background: none;
+            border: none;
+            color: #fff;
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+
+        .nav-links button:hover,
+        .nav-links button.active {
+            background-color: var(--light-green);
+            transform: translateY(-2px);
+        }
+
+        /* Pages */
+        .page {
+            display: none;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Landing Page */
+        .landing {
+            min-height: 90vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            background: linear-gradient(135deg, #F1F8E9 0%, #C8E6C9 100%);
+            padding: 2rem;
+        }
+
+        .hero-content h1 {
+            font-size: 3rem;
+            color: var(--primary-green);
+            margin-bottom: 1rem;
+        }
+
+        .hero-content p {
+            font-size: 1.2rem;
+            color: var(--text-dark);
+            margin-bottom: 2rem;
+            max-width: 600px;
+        }
+
+        .hero-icons {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .icon-box {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 150px;
+        }
+
+        .icon-box .emoji {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .icon-box p {
+            font-size: 0.9rem;
+            color: var(--text-dark);
+            margin: 0;
+        }
+
+        .cta-button {
+            background-color: var(--light-green);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(124, 179, 66, 0.4);
+        }
+
+        .cta-button:hover {
+            background-color: var(--accent);
+            transform: scale(1.05);
+        }
+
+        /* Upload Page */
+        .upload-container {
+            max-width: 800px;
+            margin: 3rem auto;
+            padding: 2rem;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .upload-container h2 {
+            color: var(--primary-green);
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .drag-drop-area {
+            border: 3px dashed var(--light-green);
+            border-radius: 10px;
+            padding: 3rem;
+            text-align: center;
+            background-color: rgba(245, 254, 231, 0.5);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .drag-drop-area:hover,
+        .drag-drop-area.drag-over {
+            background-color: rgba(124, 179, 66, 0.1);
+            border-color: var(--primary-green);
+        }
+
+        .drag-drop-area p {
+            font-size: 1.1rem;
+            color: var(--text-dark);
+            margin: 0.5rem 0;
+        }
+
+        #imageInput {
+            display: none;
+        }
+
+        .preview-container {
+            margin-top: 2rem;
+            text-align: center;
+        }
+
+        .preview-container img {
+            max-width: 300px;
+            max-height: 300px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .upload-button {
+            background-color: var(--light-green);
+            color: white;
+            padding: 0.8rem 2rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-top: 2rem;
+            transition: all 0.3s;
+        }
+
+        .upload-button:hover {
+            background-color: var(--accent);
+        }
+
+        .upload-button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* Results Page */
+        .results-container {
+            max-width: 800px;
+            margin: 3rem auto;
+            padding: 2rem;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .results-container h2 {
+            color: var(--primary-green);
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .result-image {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .result-image img {
+            max-width: 300px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .disease-card {
+            background: linear-gradient(135deg, #F1F8E9 0%, #E8F5E9 100%);
+            border-left: 5px solid var(--light-green);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+
+        .disease-name {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-green);
+            margin-bottom: 0.5rem;
+        }
+
+        .confidence {
+            font-size: 0.9rem;
+            color: var(--earth-brown);
+            margin-bottom: 1rem;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background-color: #ddd;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: var(--light-green);
+            border-radius: 5px;
+        }
+
+        .recommendations {
+            background-color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+
+        .recommendations h4 {
+            color: var(--primary-green);
+            margin-bottom: 0.5rem;
+        }
+
+        .recommendations ul {
+            list-style-position: inside;
+            color: var(--text-dark);
+        }
+
+        .recommendations li {
+            margin-bottom: 0.5rem;
+        }
+
+        .back-button {
+            background-color: var(--earth-brown);
+            color: white;
+            padding: 0.8rem 2rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-top: 2rem;
+            transition: all 0.3s;
+        }
+
+        .back-button:hover {
+            background-color: var(--primary-green);
+        }
+
+        /* Dashboard */
+        .dashboard-container {
+            max-width: 1000px;
+            margin: 3rem auto;
+            padding: 2rem;
+        }
+
+        .dashboard-container h2 {
+            color: var(--primary-green);
+            margin-bottom: 2rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            border-top: 5px solid var(--light-green);
+        }
+
+        .stat-card .number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--primary-green);
+        }
+
+        .stat-card .label {
+            color: var(--text-dark);
+            margin-top: 0.5rem;
+        }
+
+        .history-title {
+            font-size: 1.3rem;
+            color: var(--primary-green);
+            margin-bottom: 1.5rem;
+        }
+
+        .history-item {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        .history-item-image {
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            background-color: var(--bg-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+        }
+
+        .history-item-details {
+            flex: 1;
+        }
+
+        .history-item-details h4 {
+            color: var(--primary-green);
+            margin-bottom: 0.3rem;
+        }
+
+        .history-item-details p {
+            font-size: 0.9rem;
+            color: #999;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #999;
+        }
+
+        .empty-state .emoji {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Footer */
+        footer {
+            background-color: var(--primary-green);
+            color: white;
+            text-align: center;
+            padding: 2rem;
+            margin-top: 3rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav-links {
+                gap: 0.5rem;
+            }
+
+            .hero-content h1 {
+                font-size: 2rem;
+            }
+
+            .hero-icons {
+                gap: 1rem;
+            }
+
+            .icon-box {
+                width: 120px;
+                padding: 1rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .history-item {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-brand">🌾 CATALYST</div>
+        <div class="nav-links">
+            <button class="nav-btn active" data-page="landing">Home</button>
+            <button class="nav-btn" data-page="upload">Check Crop</button>
+            <button class="nav-btn" data-page="dashboard">Dashboard</button>
+        </div>
+    </nav>
+
+    <!-- Landing Page -->
+    <div id="landing" class="page active">
+        <div class="landing">
+            <div class="hero-content">
+                <h1>🌾 Welcome to CATALYST</h1>
+                <p>Crop Analysis & Treatment Accelerator with Learning & Intelligence System Tech</p>
+                <p>Detect crop diseases and pest infestations in seconds. Protect your harvest with AI-powered insights.</p>
+                
+                <div class="hero-icons">
+                    <div class="icon-box">
+                        <div class="emoji">📸</div>
+                        <p>Snap a Photo</p>
+                    </div>
+                    <div class="icon-box">
+                        <div class="emoji">🤖</div>
+                        <p>AI Analysis</p>
+                    </div>
+                    <div class="icon-box">
+                        <div class="emoji">💡</div>
+                        <p>Get Recommendations</p>
+                    </div>
+                </div>
+
+                <button class="cta-button" onclick="navigateTo('upload')">Start Detection Now</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Page -->
+    <div id="upload" class="page">
+        <div class="upload-container">
+            <h2>📸 Upload Crop Image</h2>
+            
+            <div class="drag-drop-area" id="dragDropArea">
+                <p>🖼️ Drag & drop your image here</p>
+                <p style="font-size: 0.9rem; color: #999;">or click to select a file</p>
+                <input type="file" id="imageInput" accept="image/*">
+            </div>
+
+            <div class="preview-container" id="previewContainer"></div>
+
+            <button class="upload-button" id="uploadBtn" disabled onclick="analyzeImage()">Analyze Image</button>
+        </div>
+    </div>
+
+    <!-- Results Page -->
+    <div id="results" class="page">
+        <div class="results-container">
+            <h2>✅ Detection Results</h2>
+            
+            <div class="result-image" id="resultImageContainer"></div>
+
+            <div id="diseaseResults"></div>
+
+            <button class="back-button" onclick="navigateTo('upload')">← Analyze Another Image</button>
+        </div>
+    </div>
+
+    <!-- Dashboard Page -->
+    <div id="dashboard" class="page">
+        <div class="dashboard-container">
+            <h2>📊 Your Analysis Dashboard</h2>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="number" id="totalScans">0</div>
+                    <div class="label">Total Scans</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number" id="diseaseCount">0</div>
+                    <div class="label">Diseases Detected</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number" id="pesterCount">0</div>
+                    <div class="label">Pests Detected</div>
+                </div>
+            </div>
+
+            <div class="history-title">Recent Scans</div>
+            <div id="historyContainer"></div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2026 CATALYST Team | Smart India Hackathon 2026</p>
+    </footer>
+
+    <script>
+        // Mock AI Response Database
+        const mockDiseases = {
+            tomato: {
+                name: "Tomato Leaf Spot",
+                confidence: 87,
+                description: "Fungal infection affecting tomato leaves",
+                recommendations: [
+                    "Remove infected leaves immediately",
+                    "Apply fungicide spray (copper-based)",
+                    "Improve air circulation between plants",
+                    "Avoid overhead watering",
+                    "Monitor for spread in next 3-5 days"
+                ]
+            },
+            powdery: {
+                name: "Powdery Mildew",
+                confidence: 92,
+                description: "White fungal coating on leaves",
+                recommendations: [
+                    "Spray sulfur solution on affected areas",
+                    "Reduce humidity and improve ventilation",
+                    "Remove heavily infected leaves",
+                    "Apply neem oil spray every 7 days",
+                    "Isolate infected plants"
+                ]
+            },
+            rust: {
+                name: "Leaf Rust",
+                confidence: 79,
+                description: "Orange-brown rusty spots on leaves",
+                recommendations: [
+                    "Apply rust fungicide (triazole-based)",
+                    "Remove fallen leaves from ground",
+                    "Prune lower branches for airflow",
+                    "Water at soil level only",
+                    "Separate infected plants from healthy ones"
+                ]
+            },
+            pest_aphid: {
+                name: "Aphid Infestation",
+                confidence: 85,
+                description: "Small insects sucking plant sap",
+                recommendations: [
+                    "Spray with insecticidal soap solution",
+                    "Use neem oil spray (organic option)",
+                    "Introduce ladybugs (natural predators)",
+                    "Spray with water to remove aphids",
+                    "Apply weekly until infestation clears"
+                ]
+            },
+            pest_mite: {
+                name: "Spider Mite Damage",
+                confidence: 88,
+                description: "Fine webbing and yellow spots on leaves",
+                recommendations: [
+                    "Increase humidity with misting",
+                    "Apply miticide spray",
+                    "Use neem oil weekly",
+                    "Remove heavily damaged leaves",
+                    "Monitor undersides of leaves regularly"
+                ]
+            }
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            setupDragDrop();
+            setupNavigation();
+            loadHistory();
+        });
+
+        // Navigation
+        function navigateTo(page) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            
+            document.getElementById(page).classList.add('active');
+            event.target.classList.add('active');
+            
+            // Update nav buttons
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                if (btn.dataset.page === page) {
+                    btn.classList.add('active');
+                }
+            });
+        }
+
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                navigateTo(this.dataset.page);
+            });
+        });
+
+        // Drag & Drop
+        function setupDragDrop() {
+            const dragDropArea = document.getElementById('dragDropArea');
+            const imageInput = document.getElementById('imageInput');
+
+            dragDropArea.addEventListener('click', () => imageInput.click());
+
+            dragDropArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dragDropArea.classList.add('drag-over');
+            });
+
+            dragDropArea.addEventListener('dragleave', () => {
+                dragDropArea.classList.remove('drag-over');
+            });
+
+            dragDropArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dragDropArea.classList.remove('drag-over');
+                
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    imageInput.files = files;
+                    displayPreview();
+                }
+            });
+
+            imageInput.addEventListener('change', displayPreview);
+        }
+
+        function displayPreview() {
+            const imageInput = document.getElementById('imageInput');
+            const previewContainer = document.getElementById('previewContainer');
+            const uploadBtn = document.getElementById('uploadBtn');
+
+            if (imageInput.files && imageInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewContainer.innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+                    uploadBtn.disabled = false;
+                };
+                reader.readAsDataURL(imageInput.files[0]);
+            }
+        }
+
+        // Mock Analysis
+        function analyzeImage() {
+            const imageInput = document.getElementById('imageInput');
+            if (!imageInput.files[0]) return;
+
+            // Simulate analysis delay
+            document.getElementById('uploadBtn').disabled = true;
+            document.getElementById('uploadBtn').textContent = 'Analyzing...';
+
+            setTimeout(() => {
+                const diseases = Object.values(mockDiseases);
+                const randomDisease = diseases[Math.floor(Math.random() * diseases.length)];
+
+                // Save to history
+                const file = imageInput.files[0];
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const historyItem = {
+                        date: new Date().toLocaleString(),
+                        disease: randomDisease.name,
+                        confidence: randomDisease.confidence,
+                        image: e.target.result
+                    };
+                    
+                    let history = JSON.parse(localStorage.getItem('scanHistory')) || [];
+                    history.unshift(historyItem);
+                    localStorage.setItem('scanHistory', JSON.stringify(history));
+
+                    // Display results
+                    displayResults(randomDisease, e.target.result);
+                    navigateTo('results');
+
+                    document.getElementById('uploadBtn').disabled = false;
+                    document.getElementById('uploadBtn').textContent = 'Analyze Image';
+                };
+                reader.readAsDataURL(file);
+            }, 1500);
+        }
+
+        function displayResults(disease, imageData) {
+            const resultImageContainer = document.getElementById('resultImageContainer');
+            const diseaseResults = document.getElementById('diseaseResults');
+
+            resultImageContainer.innerHTML = `<img src="${imageData}" alt="Analyzed">`;
+
+            diseaseResults.innerHTML = `
+                <div class="disease-card">
+                    <div class="disease-name">🔍 ${disease.name}</div>
+                    <div class="confidence">Confidence: ${disease.confidence}%</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${disease.confidence}%"></div>
+                    </div>
+                    <p>${disease.description}</p>
+                    
+                    <div class="recommendations">
+                        <h4>💡 Recommended Actions:</h4>
+                        <ul>
+                            ${disease.recommendations.map(rec => `<li>${rec}</li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Dashboard
+        function loadHistory() {
+            const history = JSON.parse(localStorage.getItem('scanHistory')) || [];
+            const historyContainer = document.getElementById('historyContainer');
+            const totalScans = document.getElementById('totalScans');
+            const diseaseCount = document.getElementById('diseaseCount');
+            const pesterCount = document.getElementById('pesterCount');
+
+            totalScans.textContent = history.length;
+
+            const diseases = history.filter(item => 
+                item.disease.includes('Leaf') || item.disease.includes('Rust') || item.disease.includes('Mildew')
+            ).length;
+            const pests = history.filter(item => 
+                item.disease.includes('Aphid') || item.disease.includes('Mite')
+            ).length;
+
+            diseaseCount.textContent = diseases;
+            pesterCount.textContent = pests;
+
+            if (history.length === 0) {
+                historyContainer.innerHTML = `
+                    <div class="empty-state">
+                        <div class="emoji">📋</div>
+                        <p>No scans yet. Start by checking your first crop!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            historyContainer.innerHTML = history.map(item => `
+                <div class="history-item">
+                    <div class="history-item-image">
+                        <img src="${item.image}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">
+                    </div>
+                    <div class="history-item-details">
+                        <h4>${item.disease}</h4>
+                        <p>Confidence: ${item.confidence}%</p>
+                        <p>${item.date}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Update dashboard when returning to it
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            if (btn.dataset.page === 'dashboard') {
+                btn.addEventListener('click', loadHistory);
+            }
+        });
+
+        function setupNavigation() {
+            // Already handled in DOMContentLoaded
+        }
+    </script>
+</body>
+</html>
