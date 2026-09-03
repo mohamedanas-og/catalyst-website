@@ -1,0 +1,2642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CATALYST - Crop Disease Detection</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #1B5E20;
+            --primary-light: #4CAF50;
+            --primary-lighter: #81C784;
+            --accent: #00E676;
+            --accent-glow: rgba(0, 230, 118, 0.3);
+            --surface: #ffffff;
+            --surface-glass: rgba(255, 255, 255, 0.75);
+            --surface-hover: rgba(255, 255, 255, 0.9);
+            --bg: #F0F4F0;
+            --bg-gradient: linear-gradient(135deg, #E8F5E9 0%, #F1F8E9 50%, #E0F2F1 100%);
+            --text: #1a1a2e;
+            --text-secondary: #5f6368;
+            --text-muted: #9aa0a6;
+            --border: rgba(0, 0, 0, 0.08);
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.12);
+            --shadow-glow: 0 0 30px rgba(76, 175, 80, 0.15);
+            --radius: 16px;
+            --radius-sm: 10px;
+            --radius-full: 50px;
+            --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --severity-low: #4CAF50;
+            --severity-medium: #FF9800;
+            --severity-high: #F44336;
+            --severity-critical: #9C27B0;
+        }
+
+        [data-theme="dark"] {
+            --primary: #66BB6A;
+            --primary-light: #81C784;
+            --primary-lighter: #A5D6A7;
+            --surface: #1e1e2e;
+            --surface-glass: rgba(30, 30, 46, 0.8);
+            --surface-hover: rgba(40, 40, 60, 0.9);
+            --bg: #11111b;
+            --bg-gradient: linear-gradient(135deg, #11111b 0%, #1a1a2e 50%, #11111b 100%);
+            --text: #e0e0e0;
+            --text-secondary: #a0a0b0;
+            --text-muted: #6c6c80;
+            --border: rgba(255, 255, 255, 0.08);
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.4);
+            --shadow-glow: 0 0 30px rgba(102, 187, 106, 0.1);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            overflow-x: hidden;
+            transition: background var(--transition), color var(--transition);
+        }
+
+        /* ===== Scrollbar ===== */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: var(--primary-lighter); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--primary-light); }
+
+        /* ===== Navigation ===== */
+        nav {
+            background: var(--surface-glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            padding: 0.8rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            transition: background var(--transition);
+        }
+
+        .nav-brand {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            letter-spacing: -0.5px;
+        }
+
+        .nav-brand span {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-center {
+            display: flex;
+            gap: 0.5rem;
+            background: var(--bg);
+            padding: 4px;
+            border-radius: var(--radius-full);
+            transition: background var(--transition);
+        }
+
+        .nav-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            padding: 0.5rem 1.2rem;
+            border-radius: var(--radius-full);
+            transition: all var(--transition);
+            font-family: inherit;
+        }
+
+        .nav-btn:hover {
+            color: var(--primary);
+            background: var(--surface);
+        }
+
+        .nav-btn.active {
+            background: var(--surface);
+            color: var(--primary);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            font-weight: 600;
+        }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .theme-toggle {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            transition: all var(--transition);
+        }
+
+        .theme-toggle:hover {
+            background: var(--surface);
+            transform: rotate(30deg);
+            box-shadow: var(--shadow);
+        }
+
+        .hamburger {
+            display: none;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.5rem;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .hamburger span {
+            display: block;
+            width: 24px;
+            height: 2px;
+            background: var(--text);
+            border-radius: 2px;
+            transition: all var(--transition);
+        }
+
+        .hamburger.open span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
+        .hamburger.open span:nth-child(2) { opacity: 0; }
+        .hamburger.open span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
+
+        /* ===== Mobile Menu ===== */
+        .mobile-menu {
+            display: none;
+            position: fixed;
+            top: 60px;
+            left: 0;
+            right: 0;
+            background: var(--surface-glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem;
+            z-index: 999;
+            animation: slideDown 0.3s ease;
+        }
+
+        .mobile-menu.show { display: block; }
+
+        .mobile-menu .nav-btn {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 0.8rem 1.2rem;
+            border-radius: var(--radius-sm);
+            margin-bottom: 0.25rem;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== Pages ===== */
+        .page {
+            display: none;
+            animation: pageIn 0.5s ease;
+        }
+
+        .page.active { display: block; }
+
+        @keyframes pageIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== Landing Page ===== */
+        .landing {
+            min-height: calc(100vh - 60px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .particles-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .hero-section {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 6rem 2rem 4rem;
+            min-height: calc(100vh - 60px);
+        }
+
+        .hero-content { max-width: 720px; }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--surface-glass);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+            padding: 0.4rem 1rem;
+            border-radius: var(--radius-full);
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        .hero-content h1 {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 900;
+            color: var(--text);
+            margin-bottom: 0.5rem;
+            letter-spacing: -1.5px;
+            line-height: 1.1;
+        }
+
+        .hero-content h1 .highlight {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 2.5rem;
+            max-width: 540px;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.7;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 4rem;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.85rem 2rem;
+            border-radius: var(--radius-full);
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition);
+            border: none;
+            font-family: inherit;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
+            box-shadow: 0 4px 20px rgba(76, 175, 80, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(76, 175, 80, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--surface);
+            color: var(--text);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-secondary);
+            padding: 0.6rem 1rem;
+        }
+
+        .btn-ghost:hover {
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* Feature Cards */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .feature-card {
+            background: var(--surface-glass);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+            padding: 2rem 1.5rem;
+            border-radius: var(--radius);
+            text-align: center;
+            transition: all var(--transition);
+            cursor: default;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-6px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--primary-lighter);
+        }
+
+        .feature-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            margin: 0 auto 1rem;
+        }
+
+        .feature-card:nth-child(1) .feature-icon { background: #E8F5E9; }
+        .feature-card:nth-child(2) .feature-icon { background: #E3F2FD; }
+        .feature-card:nth-child(3) .feature-icon { background: #FFF3E0; }
+
+        [data-theme="dark"] .feature-card:nth-child(1) .feature-icon { background: rgba(76,175,80,0.15); }
+        [data-theme="dark"] .feature-card:nth-child(2) .feature-icon { background: rgba(33,150,243,0.15); }
+        [data-theme="dark"] .feature-card:nth-child(3) .feature-icon { background: rgba(255,152,0,0.15); }
+
+        .feature-card h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 0.4rem;
+            color: var(--text);
+        }
+
+        .feature-card p {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        /* How It Works Section */
+        .section {
+            padding: 5rem 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            color: var(--text);
+            letter-spacing: -0.5px;
+        }
+
+        .section-subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            margin-bottom: 3rem;
+            font-size: 1rem;
+        }
+
+        .steps-container {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .step-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 2rem;
+            border-radius: var(--radius);
+            text-align: center;
+            width: 220px;
+            position: relative;
+            transition: all var(--transition);
+            box-shadow: var(--shadow);
+        }
+
+        .step-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .step-number {
+            position: absolute;
+            top: -14px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .step-card .step-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .step-card h4 {
+            font-weight: 700;
+            margin-bottom: 0.3rem;
+            color: var(--text);
+        }
+
+        .step-card p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* Stats Banner */
+        .stats-banner {
+            background: linear-gradient(135deg, var(--primary), #2E7D32);
+            padding: 3rem 2rem;
+            display: flex;
+            justify-content: center;
+            gap: 4rem;
+            flex-wrap: wrap;
+        }
+
+        .stats-banner .stat {
+            text-align: center;
+            color: white;
+        }
+
+        .stats-banner .stat .num {
+            font-size: 2.5rem;
+            font-weight: 800;
+        }
+
+        .stats-banner .stat .lbl {
+            font-size: 0.9rem;
+            opacity: 0.85;
+        }
+
+        /* ===== Upload Page ===== */
+        .upload-page {
+            max-width: 680px;
+            margin: 2.5rem auto;
+            padding: 0 1.5rem;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .page-header h2 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--text);
+            letter-spacing: -0.5px;
+        }
+
+        .page-header p {
+            color: var(--text-muted);
+            margin-top: 0.3rem;
+        }
+
+        .upload-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            transition: background var(--transition);
+        }
+
+        /* Crop Type Selector */
+        .crop-selector {
+            margin-bottom: 1.5rem;
+        }
+
+        .crop-selector label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .crop-pills {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .crop-pill {
+            padding: 0.4rem 1rem;
+            border-radius: var(--radius-full);
+            border: 1px solid var(--border);
+            background: var(--bg);
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-family: inherit;
+            color: var(--text-secondary);
+            transition: all var(--transition);
+        }
+
+        .crop-pill:hover { border-color: var(--primary-lighter); color: var(--primary); }
+
+        .crop-pill.selected {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
+            border-color: transparent;
+        }
+
+        .drag-drop-area {
+            border: 2px dashed var(--border);
+            border-radius: var(--radius);
+            padding: 3rem 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all var(--transition);
+            background: var(--bg);
+            position: relative;
+        }
+
+        .drag-drop-area:hover,
+        .drag-drop-area.drag-over {
+            border-color: var(--primary-light);
+            background: rgba(76, 175, 80, 0.04);
+        }
+
+        .drag-drop-area .upload-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .drag-drop-area .main-text {
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 0.3rem;
+        }
+
+        .drag-drop-area .sub-text {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .drag-drop-area .browse-link {
+            color: var(--primary);
+            font-weight: 600;
+            text-decoration: underline;
+        }
+
+        #imageInput, #cameraInput {
+            display: none;
+        }
+
+        .upload-options {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1rem;
+            justify-content: center;
+        }
+
+        .upload-opt-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-full);
+            background: var(--surface);
+            color: var(--text-secondary);
+            font-size: 0.82rem;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all var(--transition);
+        }
+
+        .upload-opt-btn:hover {
+            border-color: var(--primary-lighter);
+            color: var(--primary);
+        }
+
+        .preview-container {
+            margin-top: 1.5rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .preview-wrapper {
+            position: relative;
+            display: inline-block;
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        .preview-wrapper img {
+            max-width: 100%;
+            max-height: 300px;
+            display: block;
+        }
+
+        .preview-remove {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition);
+        }
+
+        .preview-remove:hover { background: rgba(244, 67, 54, 0.9); }
+
+        .upload-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            justify-content: center;
+        }
+
+        /* Analysis Progress */
+        .analysis-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(8px);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .analysis-overlay.show { display: flex; }
+
+        .analysis-modal {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 3rem;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: var(--shadow-lg);
+            animation: scaleIn 0.3s ease;
+        }
+
+        @keyframes scaleIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .analysis-spinner {
+            width: 64px;
+            height: 64px;
+            border: 4px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 1.5rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .analysis-steps {
+            text-align: left;
+            margin-top: 1.5rem;
+        }
+
+        .analysis-step {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 0;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            transition: color var(--transition);
+        }
+
+        .analysis-step.active { color: var(--primary); font-weight: 600; }
+        .analysis-step.done { color: var(--text-secondary); }
+
+        .analysis-step .step-indicator {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            flex-shrink: 0;
+            transition: all var(--transition);
+        }
+
+        .analysis-step.active .step-indicator {
+            border-color: var(--primary);
+            background: var(--primary);
+            color: white;
+            animation: pulse 1s infinite;
+        }
+
+        .analysis-step.done .step-indicator {
+            border-color: var(--primary-light);
+            background: var(--primary-light);
+            color: white;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 var(--accent-glow); }
+            50% { box-shadow: 0 0 0 8px transparent; }
+        }
+
+        /* ===== Results Page ===== */
+        .results-page {
+            max-width: 800px;
+            margin: 2.5rem auto;
+            padding: 0 1.5rem;
+        }
+
+        .result-header {
+            display: flex;
+            gap: 2rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 1.5rem;
+            align-items: flex-start;
+            transition: background var(--transition);
+        }
+
+        .result-image-box {
+            width: 200px;
+            height: 200px;
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            flex-shrink: 0;
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            transition: transform var(--transition);
+        }
+
+        .result-image-box:hover { transform: scale(1.03); }
+
+        .result-image-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .result-summary {
+            flex: 1;
+        }
+
+        .result-summary .crop-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+        }
+
+        .result-summary .disease-name {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--text);
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.5px;
+        }
+
+        .result-summary .description {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            margin-bottom: 1rem;
+        }
+
+        .severity-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.3rem 0.9rem;
+            border-radius: var(--radius-full);
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .severity-low { background: rgba(76,175,80,0.12); color: var(--severity-low); }
+        .severity-medium { background: rgba(255,152,0,0.12); color: var(--severity-medium); }
+        .severity-high { background: rgba(244,67,54,0.12); color: var(--severity-high); }
+        .severity-critical { background: rgba(156,39,176,0.12); color: var(--severity-critical); }
+
+        .confidence-bar-container {
+            margin-top: 1rem;
+        }
+
+        .confidence-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.82rem;
+            margin-bottom: 0.4rem;
+        }
+
+        .confidence-label span:first-child { color: var(--text-muted); font-weight: 500; }
+        .confidence-label span:last-child { font-weight: 700; color: var(--primary); }
+
+        .confidence-track {
+            width: 100%;
+            height: 8px;
+            background: var(--bg);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            border-radius: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            transition: width 1s ease;
+            width: 0;
+        }
+
+        /* Prediction Cards */
+        .predictions-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .predictions-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 1rem;
+        }
+
+        .prediction-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 1rem 1.5rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: all var(--transition);
+            box-shadow: var(--shadow);
+        }
+
+        .prediction-card:hover { border-color: var(--primary-lighter); }
+
+        .prediction-rank {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+        .prediction-card:first-child .prediction-rank {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
+        }
+
+        .prediction-info { flex: 1; }
+        .prediction-info h4 { font-size: 0.95rem; font-weight: 600; color: var(--text); }
+        .prediction-info p { font-size: 0.8rem; color: var(--text-muted); }
+
+        .prediction-conf {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--primary);
+        }
+
+        /* Recommendation & Timeline */
+        .result-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow);
+            transition: background var(--transition);
+        }
+
+        .result-card h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .rec-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .rec-list li {
+            padding: 0.6rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            color: var(--text-secondary);
+            font-size: 0.92rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .rec-list li:last-child { border-bottom: none; }
+
+        .rec-list li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: var(--primary-light);
+            font-weight: 700;
+        }
+
+        /* Treatment Timeline */
+        .timeline {
+            position: relative;
+            padding-left: 2rem;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 8px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--border);
+        }
+
+        .timeline-item {
+            position: relative;
+            padding-bottom: 1.5rem;
+        }
+
+        .timeline-item:last-child { padding-bottom: 0; }
+
+        .timeline-dot {
+            position: absolute;
+            left: -1.65rem;
+            top: 4px;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--primary-light);
+            border: 3px solid var(--surface);
+            box-shadow: 0 0 0 2px var(--primary-lighter);
+        }
+
+        .timeline-item .time-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .timeline-item .time-desc {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-top: 0.2rem;
+        }
+
+        .result-actions {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        /* ===== Dashboard ===== */
+        .dashboard-page {
+            max-width: 960px;
+            margin: 2.5rem auto;
+            padding: 0 1.5rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            transition: all var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+        }
+
+        .stat-card:nth-child(1)::before { background: linear-gradient(90deg, #4CAF50, #81C784); }
+        .stat-card:nth-child(2)::before { background: linear-gradient(90deg, #FF9800, #FFB74D); }
+        .stat-card:nth-child(3)::before { background: linear-gradient(90deg, #F44336, #EF5350); }
+        .stat-card:nth-child(4)::before { background: linear-gradient(90deg, #2196F3, #64B5F6); }
+
+        .stat-card .stat-icon {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card .stat-num {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--text);
+        }
+
+        .stat-card .stat-label {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        /* Chart Container */
+        .chart-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            transition: background var(--transition);
+        }
+
+        .chart-card h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--text);
+        }
+
+        .chart-canvas-wrap {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1;
+            max-height: 240px;
+            margin: 0 auto;
+        }
+
+        .chart-canvas-wrap canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        .chart-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 1rem;
+            justify-content: center;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        /* Bar chart */
+        .bar-chart {
+            display: flex;
+            align-items: flex-end;
+            gap: 1rem;
+            height: 200px;
+            padding-top: 1rem;
+        }
+
+        .bar-group {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.4rem;
+            height: 100%;
+            justify-content: flex-end;
+        }
+
+        .bar {
+            width: 100%;
+            max-width: 40px;
+            border-radius: 6px 6px 0 0;
+            background: linear-gradient(180deg, var(--primary-light), var(--primary));
+            transition: height 1s ease;
+            min-height: 4px;
+        }
+
+        .bar-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        /* History */
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .history-header h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .history-controls {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-full);
+            padding: 0.4rem 1rem;
+            gap: 0.5rem;
+            transition: border-color var(--transition);
+        }
+
+        .search-box:focus-within { border-color: var(--primary-light); }
+
+        .search-box input {
+            background: none;
+            border: none;
+            outline: none;
+            font-size: 0.85rem;
+            color: var(--text);
+            font-family: inherit;
+            width: 160px;
+        }
+
+        .search-box input::placeholder { color: var(--text-muted); }
+
+        .history-item {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 1rem 1.5rem;
+            border-radius: var(--radius-sm);
+            margin-bottom: 0.75rem;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            transition: all var(--transition);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+
+        .history-item:hover {
+            border-color: var(--primary-lighter);
+            transform: translateX(4px);
+        }
+
+        .history-thumb {
+            width: 56px;
+            height: 56px;
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .history-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .history-details { flex: 1; }
+        .history-details h4 { font-size: 0.95rem; font-weight: 600; color: var(--text); margin-bottom: 0.15rem; }
+        .history-details p { font-size: 0.8rem; color: var(--text-muted); }
+
+        .history-conf {
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--primary);
+            white-space: nowrap;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .empty-state p { font-size: 0.95rem; }
+
+        /* ===== Image Modal ===== */
+        .image-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.85);
+            z-index: 3000;
+            align-items: center;
+            justify-content: center;
+            cursor: zoom-out;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .image-modal.show { display: flex; }
+
+        .image-modal img {
+            max-width: 90vw;
+            max-height: 90vh;
+            border-radius: var(--radius-sm);
+            box-shadow: var(--shadow-lg);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* ===== Toast ===== */
+        .toast-container {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 5000;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .toast {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 0.8rem 1.2rem;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-size: 0.9rem;
+            animation: toastIn 0.3s ease;
+            min-width: 250px;
+            color: var(--text);
+        }
+
+        .toast.leaving { animation: toastOut 0.3s ease forwards; }
+
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateX(100px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes toastOut {
+            to { opacity: 0; transform: translateX(100px); }
+        }
+
+        /* ===== Footer ===== */
+        footer {
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            padding: 2rem;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            transition: background var(--transition);
+        }
+
+        footer a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        /* ===== Responsive ===== */
+        @media (max-width: 768px) {
+            .nav-center { display: none; }
+            .hamburger { display: flex; }
+
+            .hero-section { padding: 3rem 1.5rem 2rem; }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+                max-width: 320px;
+            }
+
+            .steps-container { flex-direction: column; align-items: center; }
+
+            .stats-banner { gap: 2rem; }
+
+            .result-header {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+
+            .result-image-box {
+                width: 160px;
+                height: 160px;
+            }
+
+            .chart-row {
+                grid-template-columns: 1fr;
+            }
+
+            .history-item {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .search-box input { width: 120px; }
+
+            .result-actions { justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-brand">🌾 <span>CATALYST</span></div>
+        <div class="nav-center">
+            <button class="nav-btn active" data-page="landing">Home</button>
+            <button class="nav-btn" data-page="upload">Check Crop</button>
+            <button class="nav-btn" data-page="dashboard">Dashboard</button>
+        </div>
+        <div class="nav-right">
+            <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+            <button class="hamburger" id="hamburgerBtn">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Mobile Menu -->
+    <div class="mobile-menu" id="mobileMenu">
+        <button class="nav-btn active" data-page="landing">🏠 Home</button>
+        <button class="nav-btn" data-page="upload">📸 Check Crop</button>
+        <button class="nav-btn" data-page="dashboard">📊 Dashboard</button>
+    </div>
+
+    <!-- ===== Landing Page ===== -->
+    <div id="landing" class="page active">
+        <div class="landing">
+            <canvas class="particles-canvas" id="particlesCanvas"></canvas>
+
+            <div class="hero-section">
+                <div class="hero-content">
+                    <div class="hero-badge">🚀 AI-Powered Crop Intelligence</div>
+                    <h1>Protect Your Harvest with <span class="highlight">CATALYST</span></h1>
+                    <p class="hero-subtitle">
+                        Crop Analysis &amp; Treatment Accelerator with Learning &amp; Intelligence System Tech. Detect diseases and pests in seconds with cutting-edge AI.
+                    </p>
+
+                    <div class="hero-actions">
+                        <button class="btn btn-primary" onclick="navigateTo('upload')">
+                            📸 Start Detection
+                        </button>
+                        <button class="btn btn-secondary" onclick="navigateTo('dashboard')">
+                            📊 View Dashboard
+                        </button>
+                    </div>
+
+                    <div class="features-grid">
+                        <div class="feature-card">
+                            <div class="feature-icon">📸</div>
+                            <h3>Snap &amp; Scan</h3>
+                            <p>Upload or capture a photo of your crop for instant analysis</p>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon">🧠</div>
+                            <h3>AI Detection</h3>
+                            <p>Deep learning models trained on 50K+ crop images</p>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon">💊</div>
+                            <h3>Treatment Plan</h3>
+                            <p>Actionable recommendations and treatment timelines</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- How It Works -->
+            <div class="section">
+                <h2 class="section-title">How It Works</h2>
+                <p class="section-subtitle">Three simple steps to protect your crops</p>
+                <div class="steps-container">
+                    <div class="step-card">
+                        <div class="step-number">1</div>
+                        <div class="step-icon">📷</div>
+                        <h4>Capture</h4>
+                        <p>Take a photo or upload an image of the affected crop</p>
+                    </div>
+                    <div class="step-card">
+                        <div class="step-number">2</div>
+                        <div class="step-icon">⚡</div>
+                        <h4>Analyze</h4>
+                        <p>Our AI processes the image and identifies diseases in seconds</p>
+                    </div>
+                    <div class="step-card">
+                        <div class="step-number">3</div>
+                        <div class="step-icon">✅</div>
+                        <h4>Act</h4>
+                        <p>Follow expert treatment plans and timelines to save your crop</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Banner -->
+            <div class="stats-banner">
+                <div class="stat"><div class="num" data-count="50000">0</div><div class="lbl">Images Trained</div></div>
+                <div class="stat"><div class="num" data-count="38">0</div><div class="lbl">Diseases Covered</div></div>
+                <div class="stat"><div class="num" data-count="95">0</div><div class="lbl">% Accuracy</div></div>
+                <div class="stat"><div class="num" data-count="12000">0</div><div class="lbl">Farmers Helped</div></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Upload Page ===== -->
+    <div id="upload" class="page">
+        <div class="upload-page">
+            <div class="page-header">
+                <h2>Analyze Your Crop</h2>
+                <p>Upload or capture an image to detect diseases and pests</p>
+            </div>
+
+            <div class="upload-card">
+                <div class="crop-selector">
+                    <label>Select Crop Type (optional)</label>
+                    <div class="crop-pills">
+                        <button class="crop-pill selected" data-crop="auto">🔍 Auto-detect</button>
+                        <button class="crop-pill" data-crop="tomato">🍅 Tomato</button>
+                        <button class="crop-pill" data-crop="rice">🌾 Rice</button>
+                        <button class="crop-pill" data-crop="wheat">🌿 Wheat</button>
+                        <button class="crop-pill" data-crop="corn">🌽 Corn</button>
+                        <button class="crop-pill" data-crop="potato">🥔 Potato</button>
+                        <button class="crop-pill" data-crop="grape">🍇 Grape</button>
+                    </div>
+                </div>
+
+                <div class="drag-drop-area" id="dragDropArea">
+                    <span class="upload-icon">☁️</span>
+                    <p class="main-text">Drag &amp; drop your image here</p>
+                    <p class="sub-text">or <span class="browse-link">browse files</span> to upload</p>
+                    <input type="file" id="imageInput" accept="image/*">
+                    <input type="file" id="cameraInput" accept="image/*" capture="environment">
+                </div>
+
+                <div class="upload-options">
+                    <button class="upload-opt-btn" onclick="document.getElementById('imageInput').click()">
+                        📁 Browse Files
+                    </button>
+                    <button class="upload-opt-btn" onclick="document.getElementById('cameraInput').click()">
+                        📷 Use Camera
+                    </button>
+                    <button class="upload-opt-btn" id="pasteBtn">
+                        📋 Paste Image
+                    </button>
+                </div>
+
+                <div class="preview-container" id="previewContainer"></div>
+
+                <div class="upload-actions" id="uploadActions" style="display:none;">
+                    <button class="btn btn-primary" id="uploadBtn" onclick="analyzeImage()">
+                        ⚡ Analyze Image
+                    </button>
+                    <button class="btn btn-ghost" onclick="clearPreview()">
+                        ✕ Clear
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Analysis Overlay ===== -->
+    <div class="analysis-overlay" id="analysisOverlay">
+        <div class="analysis-modal">
+            <div class="analysis-spinner"></div>
+            <h3 style="margin-bottom:0.3rem; color:var(--text);">Analyzing Image...</h3>
+            <p style="color:var(--text-muted); font-size:0.9rem;">This usually takes a few seconds</p>
+            <div class="analysis-steps" id="analysisSteps">
+                <div class="analysis-step" data-step="1">
+                    <div class="step-indicator">1</div>
+                    <span>Preprocessing image...</span>
+                </div>
+                <div class="analysis-step" data-step="2">
+                    <div class="step-indicator">2</div>
+                    <span>Detecting regions of interest...</span>
+                </div>
+                <div class="analysis-step" data-step="3">
+                    <div class="step-indicator">3</div>
+                    <span>Running disease classification...</span>
+                </div>
+                <div class="analysis-step" data-step="4">
+                    <div class="step-indicator">4</div>
+                    <span>Generating recommendations...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Results Page ===== -->
+    <div id="results" class="page">
+        <div class="results-page">
+            <div class="page-header">
+                <h2>Detection Results</h2>
+                <p>Analysis complete — here's what we found</p>
+            </div>
+
+            <div class="result-header" id="resultHeader"></div>
+
+            <div class="predictions-section">
+                <div class="predictions-title">🎯 All Predictions</div>
+                <div id="predictionsContainer"></div>
+            </div>
+
+            <div id="recommendationsCard"></div>
+            <div id="timelineCard"></div>
+
+            <div class="result-actions">
+                <button class="btn btn-primary" onclick="navigateTo('upload')">📸 Scan Another</button>
+                <button class="btn btn-secondary" onclick="exportReport()">📄 Export Report</button>
+                <button class="btn btn-secondary" onclick="shareResults()">🔗 Share</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Dashboard Page ===== -->
+    <div id="dashboard" class="page">
+        <div class="dashboard-page">
+            <div class="page-header">
+                <h2>Analysis Dashboard</h2>
+                <p>Your crop health monitoring overview</p>
+            </div>
+
+            <div class="stats-grid" id="dashStats"></div>
+
+            <div class="chart-row">
+                <div class="chart-card">
+                    <h3>📊 Detection Breakdown</h3>
+                    <div class="chart-canvas-wrap">
+                        <canvas id="pieChart"></canvas>
+                    </div>
+                    <div class="chart-legend" id="pieLegend"></div>
+                </div>
+                <div class="chart-card">
+                    <h3>📈 Scans Over Time</h3>
+                    <div class="bar-chart" id="barChart"></div>
+                </div>
+            </div>
+
+            <div class="history-header">
+                <h3>📋 Recent Scans</h3>
+                <div class="history-controls">
+                    <div class="search-box">
+                        <span>🔍</span>
+                        <input type="text" id="historySearch" placeholder="Search scans...">
+                    </div>
+                    <button class="btn btn-ghost btn-danger" id="clearHistoryBtn" style="font-size:0.8rem; padding:0.4rem 0.8rem; border-radius:var(--radius-full);" onclick="clearHistory()">
+                        🗑️ Clear
+                    </button>
+                </div>
+            </div>
+            <div id="historyContainer"></div>
+        </div>
+    </div>
+
+    <!-- ===== Image Modal ===== -->
+    <div class="image-modal" id="imageModal">
+        <img id="modalImage" src="" alt="Zoomed">
+    </div>
+
+    <!-- ===== Toast Container ===== -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- ===== Footer ===== -->
+    <footer>
+        <p>&copy; 2026 <a href="#">CATALYST</a> Team — Smart India Hackathon 2026 &nbsp;|&nbsp; Built with 💚 for Farmers</p>
+    </footer>
+
+    <script>
+    /* ==========================================================
+       CATALYST Enhanced — Full App Script
+       ========================================================== */
+
+    // ===== Mock Disease Database =====
+    const diseaseDB = [
+        {
+            id: 'tomato_leaf_spot',
+            name: 'Tomato Leaf Spot',
+            crop: 'Tomato',
+            type: 'disease',
+            description: 'Fungal infection causing dark circular spots on tomato leaves, potentially reducing yield by 20-40%.',
+            recommendations: [
+                'Remove and destroy infected leaves immediately',
+                'Apply copper-based fungicide every 7-10 days',
+                'Improve air circulation by spacing plants adequately',
+                'Avoid overhead irrigation — water at soil level',
+                'Rotate crops yearly to prevent fungal buildup'
+            ],
+            timeline: [
+                { day: 'Day 1', action: 'Remove all visibly infected leaves and dispose safely' },
+                { day: 'Day 1-2', action: 'Apply copper hydroxide fungicide (2g/L water)' },
+                { day: 'Day 7', action: 'Second fungicide application if symptoms persist' },
+                { day: 'Day 14', action: 'Evaluate progress; prune remaining affected areas' },
+                { day: 'Day 21', action: 'Final assessment — consider resistant varieties for next season' }
+            ]
+        },
+        {
+            id: 'powdery_mildew',
+            name: 'Powdery Mildew',
+            crop: 'Various',
+            type: 'disease',
+            description: 'White powdery fungal coating on leaf surfaces, common in warm, humid conditions.',
+            recommendations: [
+                'Spray sulfur-based or potassium bicarbonate solution',
+                'Reduce humidity and improve ventilation around plants',
+                'Remove heavily infected leaves and dispose properly',
+                'Apply neem oil spray every 7 days as preventive',
+                'Avoid excessive nitrogen fertilization'
+            ],
+            timeline: [
+                { day: 'Day 1', action: 'Apply sulfur spray or potassium bicarbonate solution' },
+                { day: 'Day 3', action: 'Remove heavily infected foliage' },
+                { day: 'Day 7', action: 'Reapply fungicide; begin neem oil regimen' },
+                { day: 'Day 14', action: 'Monitor new growth for signs of reinfection' },
+                { day: 'Day 21', action: 'Transition to preventive schedule if clear' }
+            ]
+        },
+        {
+            id: 'leaf_rust',
+            name: 'Leaf Rust',
+            crop: 'Wheat',
+            type: 'disease',
+            description: 'Orange-brown pustules on leaf surfaces caused by Puccinia species fungi.',
+            recommendations: [
+                'Apply triazole-based fungicide promptly',
+                'Remove fallen debris and infected residue from field',
+                'Prune lower branches to improve airflow',
+                'Water at soil level only — avoid wetting foliage',
+                'Plant rust-resistant varieties in future seasons'
+            ],
+            timeline: [
+                { day: 'Day 1', action: 'Apply propiconazole or tebuconazole fungicide' },
+                { day: 'Day 5', action: 'Clear all fallen debris around affected plants' },
+                { day: 'Day 10', action: 'Second fungicide application if needed' },
+                { day: 'Day 15', action: 'Assess crop damage and yield impact' },
+                { day: 'Day 30', action: 'Plan resistant cultivar selection for next season' }
+            ]
+        },
+        {
+            id: 'bacterial_blight',
+            name: 'Bacterial Leaf Blight',
+            crop: 'Rice',
+            type: 'disease',
+            description: 'Water-soaked lesions on rice leaves that turn yellow and eventually die, caused by Xanthomonas oryzae.',
+            recommendations: [
+                'Drain excess water from rice paddies immediately',
+                'Apply streptomycin sulfate spray (0.5g/L)',
+                'Avoid excessive nitrogen fertilizer application',
+                'Use certified disease-free seeds',
+                'Maintain proper plant spacing for airflow'
+            ],
+            timeline: [
+                { day: 'Day 1', action: 'Reduce water level in paddy and apply bactericide' },
+                { day: 'Day 3', action: 'Assess spread; remove severely affected plants' },
+                { day: 'Day 7', action: 'Second bactericide application' },
+                { day: 'Day 14', action: 'Evaluate effectiveness and adjust fertilizer regime' },
+                { day: 'Day 28', action: 'Long-term: switch to resistant rice varieties' }
+            ]
+        },
+        {
+            id: 'late_blight',
+            name: 'Late Blight',
+            crop: 'Potato',
+            type: 'disease',
+            description: 'Devastating oomycete disease causing dark water-soaked lesions on potato leaves and tubers.',
+            recommendations: [
+                'Apply mancozeb or metalaxyl-based fungicide immediately',
+                'Remove and destroy all infected plant material',
+                'Avoid overhead irrigation completely',
+                'Hill up soil around potato bases to protect tubers',
+                'Monitor weather — high humidity increases risk'
+            ],
+            timeline: [
+                { day: 'Day 1', action: 'Emergency fungicide application (mancozeb 2.5g/L)' },
+                { day: 'Day 2', action: 'Remove all visibly infected plants and burn' },
+                { day: 'Day 5', action: 'Second fungicide; hill soil around plant bases' },
+                { day: 'Day 10', action: 'Assess tuber damage below ground' },
+                { day: 'Day 14', action: 'Continue protective sprays every 5-7 days' }
+            ]
+        },
+        {
+            id: 'aphid_infestation',
+            name: 'Aphid Infestation',
+            crop: 'Various',
+            type: 'pest',
+            description: 'Colony of small sap-sucking insects on plant stems and leaf undersides, causing curling and stunted growth.',
+            recommendations: [
+                'Spray with insecticidal soap solution (5ml/L)',
+                'Apply neem oil spray as organic alternative',
+                'Introduce ladybugs or lacewings as natural predators',
+                'Blast colonies with strong water spray',
+                'Remove heavily infested shoots and dispose'
+            ],
+            timeline: [
+                { day: 'Day 1', action: 'Apply insecticidal soap spray to all affected areas' },
+                { day: 'Day 3', action: 'Follow up with neem oil application' },
+                { day: 'Day 5', action: 'Release beneficial insects if available' },
+                { day: 'Day 7', action: 'Repeat soap spray; check colony reduction' },
+                { day: 'Day 14', action: 'Weekly monitoring and preventive neem sprays' }
+            ]
+        },
+        {
+            id: 'spider_mite',
+            name: 'Spider Mite Damage',
+            crop: 'Various',
+            type: 'pest',
+            description: 'Fine silk webbing on leaves with tiny yellow/white speckling, indicating spider mite feeding damage.',
+            recommendations: [
+                'Increase humidity with misting (mites prefer dry conditions)',
+                'Apply miticide spray targeting underside of leaves',
+                'Use neem oil or horticultural oil weekly',
+                'Remove and discard heavily damaged foliage',
+                'Introduce predatory mites (Phytoseiulus persimilis)'
+            ],
+            timeline: [
+                { day: 'Day 1', action: 'Apply miticide to underside of all affected leaves' },
+                { day: 'Day 2', action: 'Begin misting regime to raise humidity' },
+                { day: 'Day 5', action: 'Second miticide application' },
+                { day: 'Day 7', action: 'Release predatory mites if available' },
+                { day: 'Day 14', action: 'Assess population; continue weekly neem oil' }
+            ]
+        },
+        {
+            id: 'downy_mildew',
+            name: 'Downy Mildew',
+            crop: 'Grape',
+            type: 'disease',
+            description: 'Yellow oily spots on upper leaf surface with white fuzzy growth beneath, common in grape vineyards.',
+            recommendations: [
+                'Apply Bordeaux mixture or mancozeb fungicide',
+                'Prune vines to improve air circulation',
+                'Remove and destroy infected leaves',
+                'Avoid late-season overhead irrigation',
+                'Apply preventive fungicides before wet seasons'
+            ],
+            timeline: [
+                { day: 'Day 1', action: 'Apply Bordeaux mixture spray (1%) to all vines' },
+                { day: 'Day 3', action: 'Prune canopy for better air movement' },
+                { day: 'Day 7', action: 'Second application of mancozeb fungicide' },
+                { day: 'Day 14', action: 'Monitor for new infection spots' },
+                { day: 'Day 21', action: 'Transition to preventive spray schedule' }
+            ]
+        }
+    ];
+
+    // ===== State =====
+    let currentImageData = null;
+    let selectedCrop = 'auto';
+    let lastResults = null;
+
+    // ===== Init =====
+    document.addEventListener('DOMContentLoaded', () => {
+        setupNavigation();
+        setupDragDrop();
+        setupCropSelector();
+        setupThemeToggle();
+        setupPasteHandler();
+        setupImageModal();
+        setupSearchFilter();
+        initParticles();
+        animateStatsOnScroll();
+    });
+
+    // ===== Navigation =====
+    function navigateTo(page) {
+        // Hide all pages
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        // Deactivate all nav buttons
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+
+        // Show target page
+        const targetPage = document.getElementById(page);
+        if (targetPage) targetPage.classList.add('active');
+
+        // Activate matching nav buttons (both desktop and mobile)
+        document.querySelectorAll(`.nav-btn[data-page="${page}"]`).forEach(b => b.classList.add('active'));
+
+        // Close mobile menu
+        document.getElementById('mobileMenu').classList.remove('show');
+        document.getElementById('hamburgerBtn').classList.remove('open');
+
+        // Scroll to top
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        // Refresh dashboard data
+        if (page === 'dashboard') loadDashboard();
+
+        // Animate confidence bar on results page
+        if (page === 'results') {
+            setTimeout(() => {
+                document.querySelectorAll('.confidence-fill').forEach(bar => {
+                    bar.style.width = bar.dataset.width;
+                });
+            }, 100);
+        }
+    }
+
+    function setupNavigation() {
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                navigateTo(this.dataset.page);
+            });
+        });
+
+        const hamburger = document.getElementById('hamburgerBtn');
+        hamburger.addEventListener('click', () => {
+            hamburger.classList.toggle('open');
+            document.getElementById('mobileMenu').classList.toggle('show');
+        });
+    }
+
+    // ===== Theme Toggle =====
+    function setupThemeToggle() {
+        const toggle = document.getElementById('themeToggle');
+        const saved = localStorage.getItem('catalyst-theme');
+        if (saved === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            toggle.textContent = '☀️';
+        }
+
+        toggle.addEventListener('click', () => {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            if (isDark) {
+                document.documentElement.removeAttribute('data-theme');
+                toggle.textContent = '🌙';
+                localStorage.setItem('catalyst-theme', 'light');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                toggle.textContent = '☀️';
+                localStorage.setItem('catalyst-theme', 'dark');
+            }
+            // Redraw charts
+            if (document.getElementById('dashboard').classList.contains('active')) {
+                loadDashboard();
+            }
+        });
+    }
+
+    // ===== Crop Selector =====
+    function setupCropSelector() {
+        document.querySelectorAll('.crop-pill').forEach(pill => {
+            pill.addEventListener('click', function () {
+                document.querySelectorAll('.crop-pill').forEach(p => p.classList.remove('selected'));
+                this.classList.add('selected');
+                selectedCrop = this.dataset.crop;
+            });
+        });
+    }
+
+    // ===== Drag & Drop + File Handling =====
+    function setupDragDrop() {
+        const area = document.getElementById('dragDropArea');
+        const imageInput = document.getElementById('imageInput');
+        const cameraInput = document.getElementById('cameraInput');
+
+        area.addEventListener('click', () => imageInput.click());
+
+        area.addEventListener('dragover', e => {
+            e.preventDefault();
+            area.classList.add('drag-over');
+        });
+
+        area.addEventListener('dragleave', () => area.classList.remove('drag-over'));
+
+        area.addEventListener('drop', e => {
+            e.preventDefault();
+            area.classList.remove('drag-over');
+            if (e.dataTransfer.files.length > 0) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        imageInput.addEventListener('change', () => {
+            if (imageInput.files[0]) handleFile(imageInput.files[0]);
+        });
+
+        cameraInput.addEventListener('change', () => {
+            if (cameraInput.files[0]) handleFile(cameraInput.files[0]);
+        });
+    }
+
+    function handleFile(file) {
+        if (!file.type.startsWith('image/')) {
+            showToast('⚠️', 'Please upload an image file');
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = e => {
+            currentImageData = e.target.result;
+            showPreview(currentImageData);
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function showPreview(src) {
+        const container = document.getElementById('previewContainer');
+        container.innerHTML = `
+            <div class="preview-wrapper">
+                <img src="${src}" alt="Preview">
+                <button class="preview-remove" onclick="clearPreview()">✕</button>
+            </div>`;
+        document.getElementById('uploadActions').style.display = 'flex';
+    }
+
+    function clearPreview() {
+        document.getElementById('previewContainer').innerHTML = '';
+        document.getElementById('uploadActions').style.display = 'none';
+        document.getElementById('imageInput').value = '';
+        document.getElementById('cameraInput').value = '';
+        currentImageData = null;
+    }
+
+    // ===== Paste Handler =====
+    function setupPasteHandler() {
+        document.getElementById('pasteBtn').addEventListener('click', async () => {
+            try {
+                const items = await navigator.clipboard.read();
+                for (const item of items) {
+                    const imageType = item.types.find(t => t.startsWith('image/'));
+                    if (imageType) {
+                        const blob = await item.getType(imageType);
+                        handleFile(new File([blob], 'pasted-image.png', { type: imageType }));
+                        return;
+                    }
+                }
+                showToast('📋', 'No image found in clipboard');
+            } catch {
+                showToast('📋', 'Could not access clipboard');
+            }
+        });
+
+        // Also handle Ctrl+V on upload page
+        document.addEventListener('paste', e => {
+            if (!document.getElementById('upload').classList.contains('active')) return;
+            const items = e.clipboardData?.items;
+            if (!items) return;
+            for (const item of items) {
+                if (item.type.startsWith('image/')) {
+                    handleFile(item.getAsFile());
+                    break;
+                }
+            }
+        });
+    }
+
+    // ===== Analysis =====
+    function analyzeImage() {
+        if (!currentImageData) return;
+
+        const overlay = document.getElementById('analysisOverlay');
+        overlay.classList.add('show');
+
+        const steps = document.querySelectorAll('#analysisSteps .analysis-step');
+        steps.forEach(s => { s.classList.remove('active', 'done'); });
+
+        let currentStep = 0;
+        const stepInterval = setInterval(() => {
+            if (currentStep > 0) steps[currentStep - 1].classList.remove('active');
+            if (currentStep > 0) steps[currentStep - 1].classList.add('done');
+            if (currentStep < steps.length) {
+                steps[currentStep].classList.add('active');
+                currentStep++;
+            } else {
+                clearInterval(stepInterval);
+                setTimeout(() => {
+                    overlay.classList.remove('show');
+                    performAnalysis();
+                }, 400);
+            }
+        }, 500);
+    }
+
+    function performAnalysis() {
+        // Filter by selected crop or use all
+        let candidates = diseaseDB;
+        if (selectedCrop !== 'auto') {
+            const cropMap = {
+                tomato: ['Tomato'],
+                rice: ['Rice'],
+                wheat: ['Wheat'],
+                corn: ['Various'],
+                potato: ['Potato'],
+                grape: ['Grape']
+            };
+            const targets = cropMap[selectedCrop] || [];
+            const filtered = candidates.filter(d => targets.includes(d.crop) || d.crop === 'Various');
+            if (filtered.length >= 3) candidates = filtered;
+        }
+
+        // Pick 3 random diseases for top predictions
+        const shuffled = [...candidates].sort(() => Math.random() - 0.5);
+        const topPredictions = shuffled.slice(0, Math.min(3, shuffled.length)).map((d, i) => {
+            const conf = i === 0 ? Math.floor(Math.random() * 12) + 85 :
+                         i === 1 ? Math.floor(Math.random() * 15) + 45 :
+                                   Math.floor(Math.random() * 20) + 10;
+            return { ...d, confidence: conf };
+        });
+
+        // Sort by confidence desc
+        topPredictions.sort((a, b) => b.confidence - a.confidence);
+
+        const primary = topPredictions[0];
+
+        // Determine severity
+        const severityLevels = ['low', 'medium', 'high', 'critical'];
+        const severity = primary.confidence > 90 ? 'critical' :
+                         primary.confidence > 80 ? 'high' :
+                         primary.confidence > 60 ? 'medium' : 'low';
+
+        lastResults = { primary, topPredictions, severity };
+
+        // Save to history
+        const historyItem = {
+            date: new Date().toISOString(),
+            disease: primary.name,
+            type: primary.type,
+            confidence: primary.confidence,
+            severity,
+            crop: primary.crop,
+            image: currentImageData
+        };
+        let history = JSON.parse(localStorage.getItem('catalystHistory')) || [];
+        history.unshift(historyItem);
+        if (history.length > 50) history = history.slice(0, 50);
+        localStorage.setItem('catalystHistory', JSON.stringify(history));
+
+        // Render results
+        renderResults(primary, topPredictions, severity);
+        navigateTo('results');
+        showToast('✅', `Detected: ${primary.name}`);
+    }
+
+    function renderResults(primary, predictions, severity) {
+        const severityLabels = { low: 'Low', medium: 'Medium', high: 'High', critical: 'Critical' };
+
+        // Header
+        document.getElementById('resultHeader').innerHTML = `
+            <div class="result-image-box" onclick="openImageModal('${currentImageData}')">
+                <img src="${currentImageData}" alt="Analyzed crop">
+            </div>
+            <div class="result-summary">
+                <div class="crop-label">${primary.crop} — ${primary.type === 'pest' ? '🐛 Pest' : '🦠 Disease'}</div>
+                <div class="disease-name">${primary.name}</div>
+                <p class="description">${primary.description}</p>
+                <span class="severity-badge severity-${severity}">
+                    ${severity === 'critical' ? '🔴' : severity === 'high' ? '🟠' : severity === 'medium' ? '🟡' : '🟢'}
+                    ${severityLabels[severity]} Severity
+                </span>
+                <div class="confidence-bar-container">
+                    <div class="confidence-label">
+                        <span>Confidence</span>
+                        <span>${primary.confidence}%</span>
+                    </div>
+                    <div class="confidence-track">
+                        <div class="confidence-fill" data-width="${primary.confidence}%" style="width:0"></div>
+                    </div>
+                </div>
+            </div>`;
+
+        // Predictions
+        document.getElementById('predictionsContainer').innerHTML = predictions.map((p, i) => `
+            <div class="prediction-card">
+                <div class="prediction-rank">${i + 1}</div>
+                <div class="prediction-info">
+                    <h4>${p.name}</h4>
+                    <p>${p.crop} — ${p.type === 'pest' ? 'Pest' : 'Disease'}</p>
+                </div>
+                <div class="prediction-conf">${p.confidence}%</div>
+            </div>`).join('');
+
+        // Recommendations
+        document.getElementById('recommendationsCard').innerHTML = `
+            <div class="result-card">
+                <h3>💊 Recommended Actions</h3>
+                <ul class="rec-list">
+                    ${primary.recommendations.map(r => `<li>${r}</li>`).join('')}
+                </ul>
+            </div>`;
+
+        // Timeline
+        document.getElementById('timelineCard').innerHTML = `
+            <div class="result-card">
+                <h3>📅 Treatment Timeline</h3>
+                <div class="timeline">
+                    ${primary.timeline.map(t => `
+                        <div class="timeline-item">
+                            <div class="timeline-dot"></div>
+                            <div class="time-label">${t.day}</div>
+                            <div class="time-desc">${t.action}</div>
+                        </div>`).join('')}
+                </div>
+            </div>`;
+    }
+
+    // ===== Export & Share =====
+    function exportReport() {
+        if (!lastResults) return;
+        const { primary, severity } = lastResults;
+        const text = [
+            `CATALYST — Crop Disease Detection Report`,
+            `${'='.repeat(45)}`,
+            `Date: ${new Date().toLocaleString()}`,
+            ``,
+            `Disease: ${primary.name}`,
+            `Crop: ${primary.crop}`,
+            `Type: ${primary.type}`,
+            `Confidence: ${primary.confidence}%`,
+            `Severity: ${severity.toUpperCase()}`,
+            ``,
+            `Description:`,
+            primary.description,
+            ``,
+            `Recommendations:`,
+            ...primary.recommendations.map((r, i) => `  ${i + 1}. ${r}`),
+            ``,
+            `Treatment Timeline:`,
+            ...primary.timeline.map(t => `  ${t.day}: ${t.action}`),
+            ``,
+            `— Generated by CATALYST`
+        ].join('\n');
+
+        const blob = new Blob([text], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `catalyst-report-${Date.now()}.txt`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('📄', 'Report exported successfully');
+    }
+
+    async function shareResults() {
+        if (!lastResults) return;
+        const { primary } = lastResults;
+        const shareData = {
+            title: 'CATALYST Detection Result',
+            text: `Disease detected: ${primary.name} (${primary.confidence}% confidence). ${primary.description}`
+        };
+        try {
+            if (navigator.share) {
+                await navigator.share(shareData);
+            } else {
+                await navigator.clipboard.writeText(shareData.text);
+                showToast('📋', 'Copied results to clipboard');
+            }
+        } catch {
+            showToast('⚠️', 'Could not share results');
+        }
+    }
+
+    // ===== Dashboard =====
+    function loadDashboard() {
+        const history = JSON.parse(localStorage.getItem('catalystHistory')) || [];
+
+        // Stats
+        const totalScans = history.length;
+        const diseases = history.filter(h => h.type === 'disease').length;
+        const pests = history.filter(h => h.type === 'pest').length;
+        const avgConf = totalScans > 0 ? Math.round(history.reduce((s, h) => s + h.confidence, 0) / totalScans) : 0;
+
+        document.getElementById('dashStats').innerHTML = `
+            <div class="stat-card">
+                <div class="stat-icon">📊</div>
+                <div class="stat-num" data-count="${totalScans}">0</div>
+                <div class="stat-label">Total Scans</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🦠</div>
+                <div class="stat-num" data-count="${diseases}">0</div>
+                <div class="stat-label">Diseases Detected</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🐛</div>
+                <div class="stat-num" data-count="${pests}">0</div>
+                <div class="stat-label">Pests Detected</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🎯</div>
+                <div class="stat-num" data-count="${avgConf}">0</div>
+                <div class="stat-label">Avg Confidence %</div>
+            </div>`;
+
+        animateCounters(document.getElementById('dashStats'));
+        drawPieChart(history);
+        drawBarChart(history);
+        renderHistory(history);
+    }
+
+    function animateCounters(container) {
+        container.querySelectorAll('.stat-num[data-count]').forEach(el => {
+            const target = parseInt(el.dataset.count);
+            const duration = 800;
+            const start = performance.now();
+
+            function tick(now) {
+                const elapsed = now - start;
+                const progress = Math.min(elapsed / duration, 1);
+                const eased = 1 - Math.pow(1 - progress, 3);
+                el.textContent = Math.round(target * eased).toLocaleString();
+                if (progress < 1) requestAnimationFrame(tick);
+            }
+
+            requestAnimationFrame(tick);
+        });
+    }
+
+    // ===== Charts =====
+    function drawPieChart(history) {
+        const canvas = document.getElementById('pieChart');
+        const ctx = canvas.getContext('2d');
+        const size = canvas.parentElement.clientWidth;
+        canvas.width = size * 2;
+        canvas.height = size * 2;
+        ctx.scale(2, 2);
+
+        const counts = {};
+        history.forEach(h => { counts[h.disease] = (counts[h.disease] || 0) + 1; });
+        const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 6);
+        const total = entries.reduce((s, e) => s + e[1], 0);
+
+        const colors = ['#4CAF50', '#FF9800', '#2196F3', '#F44336', '#9C27B0', '#009688'];
+        const cx = size / 2, cy = size / 2, radius = Math.min(cx, cy) * 0.75;
+
+        if (total === 0) {
+            ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() || '#999';
+            ctx.font = '14px Inter';
+            ctx.textAlign = 'center';
+            ctx.fillText('No data yet', cx, cy);
+            document.getElementById('pieLegend').innerHTML = '';
+            return;
+        }
+
+        let startAngle = -Math.PI / 2;
+        entries.forEach(([name, count], i) => {
+            const sliceAngle = (count / total) * 2 * Math.PI;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.arc(cx, cy, radius, startAngle, startAngle + sliceAngle);
+            ctx.fillStyle = colors[i % colors.length];
+            ctx.fill();
+            startAngle += sliceAngle;
+        });
+
+        // Center hole (donut)
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius * 0.55, 0, Math.PI * 2);
+        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--surface').trim() || '#fff';
+        ctx.fill();
+
+        // Center text
+        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text').trim() || '#333';
+        ctx.font = 'bold 20px Inter';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(total, cx, cy - 8);
+        ctx.font = '11px Inter';
+        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() || '#999';
+        ctx.fillText('scans', cx, cy + 12);
+
+        // Legend
+        document.getElementById('pieLegend').innerHTML = entries.map(([name], i) =>
+            `<div class="legend-item"><div class="legend-dot" style="background:${colors[i % colors.length]}"></div>${name}</div>`
+        ).join('');
+    }
+
+    function drawBarChart(history) {
+        const container = document.getElementById('barChart');
+        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const dayCounts = new Array(7).fill(0);
+
+        history.forEach(h => {
+            const d = new Date(h.date);
+            if (!isNaN(d)) dayCounts[d.getDay()]++;
+        });
+
+        const maxCount = Math.max(...dayCounts, 1);
+
+        container.innerHTML = dayCounts.map((count, i) => {
+            const height = (count / maxCount) * 100;
+            return `<div class="bar-group">
+                <div class="bar" style="height:${height}%;" title="${count} scans"></div>
+                <div class="bar-label">${days[i]}</div>
+            </div>`;
+        }).join('');
+    }
+
+    // ===== History =====
+    function renderHistory(history, filter = '') {
+        const container = document.getElementById('historyContainer');
+        let filtered = history;
+        if (filter) {
+            const q = filter.toLowerCase();
+            filtered = history.filter(h =>
+                h.disease.toLowerCase().includes(q) ||
+                h.crop?.toLowerCase().includes(q) ||
+                h.type?.toLowerCase().includes(q)
+            );
+        }
+
+        if (filtered.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">${filter ? '🔍' : '📋'}</div>
+                    <p>${filter ? 'No matching scans found' : 'No scans yet — analyze your first crop!'}</p>
+                </div>`;
+            return;
+        }
+
+        container.innerHTML = filtered.map(item => {
+            const date = new Date(item.date);
+            const dateStr = !isNaN(date) ? date.toLocaleDateString('en-US', {
+                month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+            }) : item.date;
+
+            return `<div class="history-item">
+                <div class="history-thumb">
+                    <img src="${item.image}" alt="${item.disease}">
+                </div>
+                <div class="history-details">
+                    <h4>${item.disease}</h4>
+                    <p>${item.crop || ''} · ${item.type === 'pest' ? '🐛 Pest' : '🦠 Disease'} · ${dateStr}</p>
+                </div>
+                <div class="history-conf">${item.confidence}%</div>
+            </div>`;
+        }).join('');
+    }
+
+    function setupSearchFilter() {
+        const input = document.getElementById('historySearch');
+        input.addEventListener('input', () => {
+            const history = JSON.parse(localStorage.getItem('catalystHistory')) || [];
+            renderHistory(history, input.value);
+        });
+    }
+
+    function clearHistory() {
+        if (confirm('Clear all scan history? This cannot be undone.')) {
+            localStorage.removeItem('catalystHistory');
+            loadDashboard();
+            showToast('🗑️', 'History cleared');
+        }
+    }
+
+    // ===== Image Modal =====
+    function setupImageModal() {
+        const modal = document.getElementById('imageModal');
+        modal.addEventListener('click', () => modal.classList.remove('show'));
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') modal.classList.remove('show');
+        });
+    }
+
+    function openImageModal(src) {
+        const modal = document.getElementById('imageModal');
+        document.getElementById('modalImage').src = src;
+        modal.classList.add('show');
+    }
+
+    // ===== Toast Notifications =====
+    function showToast(icon, message) {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.innerHTML = `<span>${icon}</span><span>${message}</span>`;
+        container.appendChild(toast);
+
+        setTimeout(() => {
+            toast.classList.add('leaving');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+
+    // ===== Particle Animation =====
+    function initParticles() {
+        const canvas = document.getElementById('particlesCanvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+
+        function resize() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        }
+        resize();
+        window.addEventListener('resize', resize);
+
+        const particles = [];
+        const leafEmojis = ['🍃', '🌿', '☘️', '🌱', '🍂'];
+
+        for (let i = 0; i < 20; i++) {
+            particles.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                emoji: leafEmojis[Math.floor(Math.random() * leafEmojis.length)],
+                size: 12 + Math.random() * 14,
+                speedX: (Math.random() - 0.5) * 0.5,
+                speedY: Math.random() * 0.3 + 0.1,
+                rotation: Math.random() * 360,
+                rotSpeed: (Math.random() - 0.5) * 2,
+                opacity: 0.15 + Math.random() * 0.25
+            });
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.x += p.speedX;
+                p.y += p.speedY;
+                p.rotation += p.rotSpeed;
+
+                if (p.y > canvas.height + 20) { p.y = -20; p.x = Math.random() * canvas.width; }
+                if (p.x < -20) p.x = canvas.width + 20;
+                if (p.x > canvas.width + 20) p.x = -20;
+
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate((p.rotation * Math.PI) / 180);
+                ctx.globalAlpha = p.opacity;
+                ctx.font = `${p.size}px serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(p.emoji, 0, 0);
+                ctx.restore();
+            });
+            requestAnimationFrame(draw);
+        }
+        draw();
+    }
+
+    // ===== Animated Stats on Scroll (Landing) =====
+    function animateStatsOnScroll() {
+        const observer = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.querySelectorAll('.num[data-count]').forEach(el => {
+                        const target = parseInt(el.dataset.count);
+                        const duration = 1500;
+                        const start = performance.now();
+
+                        function tick(now) {
+                            const elapsed = now - start;
+                            const progress = Math.min(elapsed / duration, 1);
+                            const eased = 1 - Math.pow(1 - progress, 3);
+                            let val = Math.round(target * eased);
+                            el.textContent = val.toLocaleString();
+                            if (progress < 1) requestAnimationFrame(tick);
+                        }
+
+                        requestAnimationFrame(tick);
+                    });
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.3 });
+
+        const banner = document.querySelector('.stats-banner');
+        if (banner) observer.observe(banner);
+    }
+    </script>
+</body>
+</html>
